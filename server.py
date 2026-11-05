@@ -17,6 +17,9 @@ def validate(school):
         raise ValueError("Geçersiz hafta")
     if not isinstance(school["school"], str) or not school["school"].strip():
         raise ValueError("Okul adı gerekli")
+    daily = school.get("daily", [hours] * days)
+    if len(daily) != days or any(type(n) is not int or not 0 <= n <= hours for n in daily):
+        raise ValueError("Geçersiz günlük saat")
     occupied = set()
     for closure in school["closed"]:
         slot = closure["slot"]
@@ -45,7 +48,7 @@ def validate(school):
     if not expected or len(expected) != len(starts):
         raise ValueError("Eksik yerleşim")
     for start, (length, resources) in zip(starts, expected):
-        if type(start) is not int or not 0 <= start < days * hours or start % hours + length > hours:
+        if type(start) is not int or not 0 <= start < days * hours or start % hours + length > daily[start // hours]:
             raise ValueError("Geçersiz yerleşim")
         for t in range(start, start + length):
             for r in resources:

@@ -33,12 +33,12 @@ function grid(){
  const body=table($('#grid'),['Saat',...days.slice(0,p.days)]);
  const cells=Array(p.hours*p.days).fill(null);
  if(p.starts){const {tasks}=problem(p);tasks.forEach((task,i)=>{if(task.resources.includes($('#view').value))for(let k=0;k<task.len;k++)cells[p.starts[i]+k]=p.lessons[task.i]})}
- for(let h=0;h<p.hours;h++){const row=body.insertRow();row.insertCell().textContent=h+1;for(let d=0;d<p.days;d++){const cell=row.insertCell(),t=d*p.hours+h,l=cells[t];cell.textContent=l?l.name:p.closed.some(c=>c.slot===t&&c.resource===$('#view').value)?'Kapalı':'—';if(l){const sub=document.createElement('span');sub.textContent=[l.groups.join(', '),l.teachers.join(', '),l.room].filter(Boolean).join(' · ');cell.append(sub)}}}
+ for(let h=0;h<p.hours;h++){const row=body.insertRow();row.insertCell().textContent=h+1;for(let d=0;d<p.days;d++){const cell=row.insertCell(),t=d*p.hours+h,l=cells[t];cell.textContent=l?l.name:p.closed.some(c=>c.slot===t&&c.resource===$('#view').value)?'Kapalı':'—';if(l){cell.dataset.tone=String([...l.name].reduce((n,c)=>n+c.codePointAt(0),0)%6);const sub=document.createElement('span');sub.textContent=[l.groups.join(', '),l.teachers.join(', '),l.room].filter(Boolean).join(' · ');cell.append(sub)}}}
 }
 function render(){
- $('#title').textContent=p.school;$('#generate').textContent=worker?'Aramayı durdur':'Programı oluştur';
+ $('#title').textContent=p.school;$('#summary').textContent=[new Set(p.lessons.flatMap(l=>l.groups)).size+' şube',new Set(p.lessons.flatMap(l=>l.teachers)).size+' öğretmen',p.days+' günlük hafta'].join('   ·   ');$('#generate').textContent=worker?'Aramayı durdur':'Programı oluştur';
  const f=$('#settings').elements;for(const k of ['school','days','hours'])f[k].value=p[k];
- options($('#view'),resources());options($('#closure').elements.res,resources());options($('#closure').elements.day,days.slice(0,p.days));options($('#closure').elements.hour,['Tüm gün',...Array.from({length:p.hours},(_,i)=>String(i+1))]);
+ const ordered=resources();options($('#view'),[...ordered.filter(r=>r.startsWith('Şube · ')),...ordered.filter(r=>!r.startsWith('Şube · '))]);options($('#closure').elements.res,resources());options($('#closure').elements.day,days.slice(0,p.days));options($('#closure').elements.hour,['Tüm gün',...Array.from({length:p.hours},(_,i)=>String(i+1))]);
  const body=table($('#list'),['Ders','Şube','Öğretmen','Derslik','Bloklar','İşlem']);
  p.lessons.forEach((l,i)=>{const tr=body.insertRow();for(const v of [l.name,l.groups.join(', '),l.teachers.join(', '),l.room,l.blocks.join('+')])tr.insertCell().textContent=v;const cell=tr.insertCell();cell.append(button('Düzenle',()=>{edit=i;const e=$('#lesson').elements;for(const k of ['name','room','groups','teachers','blocks'])e[k].value=Array.isArray(l[k])?l[k].join(k==='blocks'?'+':', '):l[k];e.name.focus()}),button('Sil',()=>{if(confirm(l.name+' ataması silinsin mi?')){edit=-1;$('#lesson').reset();change(x=>x.lessons.splice(i,1))}}))});
  $('#closed').replaceChildren(...p.closed.map((c,i)=>button(c.resource+' · '+days[Math.floor(c.slot/p.hours)]+' '+(c.slot%p.hours+1)+'. saat ×',()=>change(x=>x.closed.splice(i,1)))));

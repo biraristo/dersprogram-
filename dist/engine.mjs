@@ -3,6 +3,8 @@ export function problem(p){
  if(!p||!Number.isInteger(p.days)||p.days<1||p.days>7||!Number.isInteger(p.hours)||p.hours<1||p.hours>16||!Array.isArray(p.lessons)||!Array.isArray(p.closed))throw Error('Hafta veya veri biçimi geçersiz.');
  if(!p.lessons.length)throw Error('En az bir ders ataması girin.');
  const tasks=[],blocked=new Map(),load=new Map(),count=p.days*p.hours;
+ const limits=p.daily??Array(p.days).fill(p.hours);
+ if(!Array.isArray(limits)||limits.length!==p.days||limits.some(n=>!Number.isInteger(n)||n<0||n>p.hours))throw Error('Günlük ders sayıları geçersiz.');
  for(const c of p.closed){
   if(typeof c.resource!=='string'||!Number.isInteger(c.slot)||c.slot<0||c.slot>=count)throw Error('Kapalı saat haftanın dışında.');
   if(!blocked.has(c.resource))blocked.set(c.resource,new Set());
@@ -13,6 +15,10 @@ export function problem(p){
   const resources=[...new Set([...l.groups.map(x=>'Şube · '+x),...l.teachers.map(x=>'Öğretmen · '+x),...(l.room?['Derslik · '+l.room]:[])])];
   for(const [j,len] of l.blocks.entries()){
    if(!Number.isInteger(len)||len<1||len>p.hours)throw Error(l.name+' için blok uzunluğu günlük saati aşıyor veya geçersiz.');
+   for(const r of resources){
+    if(!blocked.has(r))blocked.set(r,new Set());
+    limits.forEach((limit,d)=>{for(let h=limit;h<p.hours;h++)blocked.get(r).add(d*p.hours+h)});
+   }
    tasks.push({i,j,len,resources});for(const r of resources)load.set(r,(load.get(r)||0)+len);
   }
  }
